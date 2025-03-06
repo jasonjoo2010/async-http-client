@@ -28,6 +28,7 @@ import org.asynchttpclient.netty.NettyResponseStatus;
 import org.asynchttpclient.netty.channel.ChannelManager;
 import org.asynchttpclient.netty.channel.Channels;
 import org.asynchttpclient.netty.request.NettyRequestSender;
+import org.asynchttpclient.util.HttpConstants.ResponseStatusCodes;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -39,9 +40,11 @@ public final class HttpHandler extends AsyncHttpClientHandler {
     super(config, channelManager, requestSender);
   }
 
-  private boolean abortAfterHandlingStatus(AsyncHandler<?> handler,
-                                           NettyResponseStatus status) throws Exception {
-    return handler.onStatusReceived(status) == State.ABORT;
+  private static boolean abortAfterHandlingStatus(AsyncHandler<?> handler, HttpMethod httpMethod, NettyResponseStatus status) throws Exception {
+      // For non-200 response of a CONNECT request, it's still unconnected.
+      // We need to either close the connection or reuse it but send CONNECT request again.
+      // The former one is easier or we have to attach more state to Channel.
+      return handler.onStatusReceived(status) == State.ABORT || httpMethod == HttpMethod.CONNECT && status.getStatusCode() != ResponseStatusCodes.OK_200;
   }
 
   private boolean abortAfterHandlingHeaders(AsyncHandler<?> handler,
@@ -75,7 +78,7 @@ public final class HttpHandler extends AsyncHttpClientHandler {
     HttpHeaders responseHeaders = response.headers();
 
     if (!interceptors.exitAfterIntercept(channel, future, handler, response, status, responseHeaders)) {
-      boolean abort = abortAfterHandlingStatus(handler, status) || //
+      boolean abort = abortAfterHandlingStatus(handler, httpRequest.method(), status) || //
               abortAfterHandlingHeaders(handler, responseHeaders) || //
               abortAfterHandlingReactiveStreams(channel, future, handler);
 
