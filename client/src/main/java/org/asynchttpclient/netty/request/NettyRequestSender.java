@@ -117,6 +117,7 @@ public final class NettyRequestSender {
 
   private boolean isConnectAlreadyDone(Request request, NettyResponseFuture<?> future) {
     return future != null
+            && Channels.isChannelActive(future.channel())
             && future.getNettyRequest() != null
             && future.getNettyRequest().getHttpRequest().method() == HttpMethod.CONNECT
             && !request.getMethod().equals(CONNECT);
