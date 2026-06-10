@@ -4,7 +4,7 @@
 
   <groupId>org.asynchttpclient</groupId>
   <artifactId>async-http-client-project</artifactId>
-  <version>2.15.0</version>
+  <version>2.15.0-agoda</version>
   <packaging>pom</packaging>
 
   <name>Asynchronous Http Client Project</name>
